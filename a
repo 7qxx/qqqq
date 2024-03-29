@@ -76,7 +76,7 @@ local TweenService = game:GetService("TweenService")
 local Area = ""
 local Settings = {
     Movement = {
-        TweenSpeed = 700,
+        TweenSpeed = 600,
         UnderOffset = Vector3.new(0, -700, 0) 
     },
     General = {
@@ -119,55 +119,57 @@ RunService.Stepped:connect(function()
       end
     end)
 
-    local function TweenReal(CF)
-        LogD("Tweening")
-        TweenT = true
-        pcall(function()
-            local Character = LocalPlayer.Character
-            local Humanoid = Character.Humanoid
-            local HRP = Character.HumanoidRootPart
-            local UnderPosition = CF.Position + Settings.Movement.UnderOffset
-    
-            local BodyPosition = GetBodyPosition(HRP)
-    
-            local UnderTweenInfo = TweenInfo.new((HRP.Position - UnderPosition).Magnitude / Settings.Movement.TweenSpeed, Enum.EasingStyle.Linear, Enum.EasingDirection.In)
-            local ToCFTweenInfo = TweenInfo.new((UnderPosition - CF.Position).Magnitude / Settings.Movement.TweenSpeed, Enum.EasingStyle.Linear, Enum.EasingDirection.In)
-    
-            BodyPosition.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-            BodyPosition.P = 1000000
-    
-            local OldNoclip = Settings.General.Noclip
-            local OldPlatformStand = Settings.General.PlatformStand
-            Settings.General.Noclip = true
-            Settings.General.PlatformStand = true
-
-            local UnderTween = TweenService:Create(BodyPosition, UnderTweenInfo, {Position = UnderPosition})
-            UnderTween:Play()
-            UnderTween.Completed:Wait()
-    
-            local ToCFTween = TweenService:Create(BodyPosition, ToCFTweenInfo, {Position = CF.Position})
-            ToCFTween:Play()
-            ToCFTween.Completed:Wait()
-            local StartTime = os.time()
-            repeat
-                wait()
-            until
-                (HRP.Position - CF.Position).Magnitude <= 1 or os.time() - StartTime >= 20 or Humanoid.Health < 1
-            BodyPosition.MaxForce = Vector3.new(0, 0, 0)
-            Settings.General.Noclip = OldNoclip
-            Settings.General.PlatformStand = OldPlatformStand
-            BodyPosition:Destroy()
-        end)
-        TweenT = false
-    end
 local function Tween(CF)
-local HumanoidRootPart = LocalPlayer.Character.Character.HumanoidRootPart
-  TweenReal(HumanoidRootPart.CFrame.X,-700,HumanoidRootPart.CFrame.Z)
-TweenReal(CF.X,-700,CF.Z)
+    LogD("Tweening")
+    TweenT = true
+    pcall(function()
+        local Character = LocalPlayer.Character
+        local Humanoid = Character.Humanoid
+        local HRP = Character.HumanoidRootPart
+        local DownPosition = Vector3.new(HRP.Position.X, 500, HRP.Position.Z) 
 
-TweenReal(CF.X,CF.Y,CF.Z)
+        local BodyPosition = GetBodyPosition(HRP)
 
+        local DownTweenInfo = TweenInfo.new((HRP.Position - DownPosition).Magnitude / Settings.Movement.TweenSpeed, Enum.EasingStyle.Linear, Enum.EasingDirection.In)
+        local OverTweenInfo = TweenInfo.new((DownPosition - CF.Position).Magnitude / Settings.Movement.TweenSpeed, Enum.EasingStyle.Linear, Enum.EasingDirection.In)
+        local UpTweenInfo = TweenInfo.new((CF.Position - Vector3.new(HRP.Position.X, DownPosition.Y, HRP.Position.Z)).Magnitude / (Settings.Movement.TweenSpeed * 2.2), Enum.EasingStyle.Linear, Enum.EasingDirection.In)
+
+        BodyPosition.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+        BodyPosition.P = 1000000
+
+        local OldNoclip = Settings.General.Noclip
+        local OldPlatformStand = Settings.General.PlatformStand
+        Settings.General.Noclip = true
+        Settings.General.PlatformStand = true
+
+        local DownTween = TweenService:Create(BodyPosition, DownTweenInfo, {Position = DownPosition})
+        DownTween:Play()
+        DownTween.Completed:Wait()
+
+        local OverPosition = Vector3.new(CF.Position.X, DownPosition.Y, CF.Position.Z) 
+        local OverTween = TweenService:Create(BodyPosition, OverTweenInfo, {Position = OverPosition})
+        OverTween:Play()
+        OverTween.Completed:Wait()
+
+        local UpTween = TweenService:Create(BodyPosition, UpTweenInfo, {Position = CF.Position})
+        UpTween:Play()
+        UpTween.Completed:Wait()
+
+        local StartTime = os.time()
+        repeat
+            wait()
+        until
+            (HRP.Position - CF.Position).Magnitude <= 1 or os.time() - StartTime >= 20 or Humanoid.Health < 1
+
+        BodyPosition.MaxForce = Vector3.new(0, 0, 0)
+        Settings.General.Noclip = OldNoclip
+        Settings.General.PlatformStand = OldPlatformStand
+        BodyPosition:Destroy()
+    end)
+    TweenT = false
 end
+
+    
 -- workspace.SpawnedItems["Burning Ash Scroll"].Handle.ProximityPrompt
 
 _G.Webhook = "https://discord.com/api/webhooks/1220859470675050546/WY4sQ0Gaaw02mCQELRqUPhQrdW8R-gbv8Y7j2trgvzHBZ5THwjaE5eBOLdMFVpMyK57r"
