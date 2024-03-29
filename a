@@ -1,0 +1,436 @@
+repeat wait() until game:IsLoaded() 
+local TeleportService = game:GetService("TeleportService")
+_G.DebugHook = "https://discord.com/api/webhooks/1221089698684993536/y5virfS1CCNqD6HHsKOSX3BJ-bizF47KrspsfSlZqrAIwTQOM5AFvVBUphkyUXU4FiSs"
+local LocalPlayer = game.Players.LocalPlayer
+
+function LogD(LogItem) -- logs messages cba making it all into one func im lazy and does the same shi anyways.
+    local data = { ["content"] = "", ["embeds"] = {{ ["title"] = "__**Log**__", ["description"] = LogItem, ["type"] = "rich", ["color"] = tonumber(0xffffff), ["fields"] = { { ["name"] = "Account Name", ["value"] = "", ["inline"] = true },  } }} }
+    local response = request( { Url = _G.DebugHook, Method = 'POST', Headers = { ['Content-Type'] = 'application/json' }, Body = game:GetService('HttpService'):JSONEncode(data) } );       
+end 
+
+
+print("a")
+if game.PlaceId ~= 10369535604 then 
+    LogD("joined main game, somehow disconnected ?")
+    TeleportService:Teleport(10369535604, Player)
+else
+wait(7)
+
+local LocalPlayer = game.Players.LocalPlayer
+local Me = workspace.LivingThings[LocalPlayer.Name]
+local HttpService = game:GetService("HttpService")
+
+local Mt = getrawmetatable(game)
+local Old = Mt.__namecall
+setreadonly(Mt,false)
+Mt.__namecall = newcclosure(function(Self, ...)
+local Args = {...}
+if getnamecallmethod() == 'FireServer' and Self.Name == 'SelfHarm' then
+Args[1] = 0
+end
+return Old(Self, unpack(Args))
+end)
+
+local function HidePlayer()
+    Me.FakeHead:Destroy()
+    Me["Left Arm"]:Destroy()
+    Me["Left Leg"]:Destroy()
+    Me["Right Arm"]:Destroy()
+    Me["Right Leg"]:Destroy()
+
+    for I,V in pairs(Me:GetChildren()) do 
+        if V:isA("Accessory") then
+            V:Destroy()
+        elseif V:isA("Shirt") then
+            V:Destroy()
+        elseif V:isA("Pants") then
+            V:Destroy()
+        end
+    end
+end
+
+-- // Services
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+-- \\ ========
+
+-- // Variables
+local MovementSpeed = 800
+local Character = LocalPlayer.Character
+local Humanoid = Character.Humanoid
+local HRP = Character.HumanoidRootPart
+local OldCf = HRP.CFrame
+local Noclip = false
+local PlatformStand = false
+local Players = game:GetService("Players")
+local ServerName = game:GetService("ReplicatedStorage").ServerName.Value
+local AutoKick = true
+-- \\ ========
+
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+
+
+local TweenService = game:GetService("TweenService")
+local Area = ""
+local Settings = {
+    Movement = {
+        TweenSpeed = 700,
+        UnderOffset = Vector3.new(0, -700, 0) 
+    },
+    General = {
+        Noclip = true,
+        PlatformStand = true
+    }
+}
+
+local TweenT = false
+
+function GetBodyPosition(HumanoidRootPart)
+    local BodyPosition = Instance.new("BodyPosition")
+    BodyPosition.Position = HumanoidRootPart.Position
+    BodyPosition.Parent = HumanoidRootPart
+    return BodyPosition
+end
+
+RunService.Stepped:Connect(function()
+    if Settings.General.Noclip then
+        for I, V in pairs(LocalPlayer.Character:GetChildren()) do
+            if V:IsA("BasePart") then
+                V.CanCollide = false
+            end
+        end
+    end
+end)
+
+RunService.Stepped:connect(function()
+    if AutoKick then
+       for i,plr in pairs(game.Players:GetPlayers()) do
+        pcall(function()
+        magnitude = (Character.HumanoidRootPart.Position - plr.Character.HumanoidRootPart.Position).magnitude
+        if magnitude < 30 and plr.Name ~= Character.Name then
+        LocalPlayer:Kick("someone came within your distance.. " .. plr.Name)
+          TeleportService:Teleport(6808589067, LocalPlayer)
+          LogD("Proximity Kick, user triggered: " .. plr.Name)
+        end
+        end)
+       end
+      end
+    end)
+
+    local function TweenReal(CF)
+        LogD("Tweening")
+        TweenT = true
+        pcall(function()
+            local Character = LocalPlayer.Character
+            local Humanoid = Character.Humanoid
+            local HRP = Character.HumanoidRootPart
+            local UnderPosition = CF.Position + Settings.Movement.UnderOffset
+    
+            local BodyPosition = GetBodyPosition(HRP)
+    
+            local UnderTweenInfo = TweenInfo.new((HRP.Position - UnderPosition).Magnitude / Settings.Movement.TweenSpeed, Enum.EasingStyle.Linear, Enum.EasingDirection.In)
+            local ToCFTweenInfo = TweenInfo.new((UnderPosition - CF.Position).Magnitude / Settings.Movement.TweenSpeed, Enum.EasingStyle.Linear, Enum.EasingDirection.In)
+    
+            BodyPosition.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+            BodyPosition.P = 1000000
+    
+            local OldNoclip = Settings.General.Noclip
+            local OldPlatformStand = Settings.General.PlatformStand
+            Settings.General.Noclip = true
+            Settings.General.PlatformStand = true
+
+            local UnderTween = TweenService:Create(BodyPosition, UnderTweenInfo, {Position = UnderPosition})
+            UnderTween:Play()
+            UnderTween.Completed:Wait()
+    
+            local ToCFTween = TweenService:Create(BodyPosition, ToCFTweenInfo, {Position = CF.Position})
+            ToCFTween:Play()
+            ToCFTween.Completed:Wait()
+            local StartTime = os.time()
+            repeat
+                wait()
+            until
+                (HRP.Position - CF.Position).Magnitude <= 1 or os.time() - StartTime >= 20 or Humanoid.Health < 1
+            BodyPosition.MaxForce = Vector3.new(0, 0, 0)
+            Settings.General.Noclip = OldNoclip
+            Settings.General.PlatformStand = OldPlatformStand
+            BodyPosition:Destroy()
+        end)
+        TweenT = false
+    end
+local function Tween(CF)
+local HumanoidRootPart = LocalPlayer.Character.Character.HumanoidRootPart
+  TweenReal(HumanoidRootPart.CFrame.X,-700,HumanoidRootPart.CFrame.Z)
+TweenReal(CF.X,-700,CF.Z)
+
+TweenReal(CF.X,CF.Y,CF.Z)
+
+end
+-- workspace.SpawnedItems["Burning Ash Scroll"].Handle.ProximityPrompt
+
+_G.Webhook = "https://discord.com/api/webhooks/1220859470675050546/WY4sQ0Gaaw02mCQELRqUPhQrdW8R-gbv8Y7j2trgvzHBZ5THwjaE5eBOLdMFVpMyK57r"
+_G.MerchantHook = "https://discord.com/api/webhooks/1221166802906648586/2wWbcV73Dq4TFW7PnZ79HwXiSh0CgLYhEQ5a6dim4SNe9HC1yX73WLUTr17gY7Wl7bwV"
+
+function Log(LogItem)
+    local data = { ["content"] = "@everyone", ["embeds"] = {{ ["title"] = "__**Log**__", ["description"] =  LogItem, ["type"] = "rich", ["color"] = tonumber(0xffffff), ["fields"] = { { ["name"] = "Account Name", ["value"] =  game.Players.LocalPlayer.Name, ["inline"] = true },  } }} }
+    local response = request( { Url = _G.Webhook, Method = 'POST', Headers = { ['Content-Type'] = 'application/json' }, Body = game:GetService('HttpService'):JSONEncode(data) } );       
+end 
+
+function LogMerchant(LogItem)
+    local data = { ["content"] = "@everyone", ["embeds"] = {{ ["title"] = "__**Log**__", ["description"] =  LogItem, ["type"] = "rich", ["color"] = tonumber(0xffffff), ["fields"] = { { ["name"] = "Account Name", ["value"] =  game.Players.LocalPlayer.Name, ["inline"] = true },  } }} }
+    local response = request( { Url = _G.MerchantHook, Method = 'POST', Headers = { ['Content-Type'] = 'application/json' }, Body = game:GetService('HttpService'):JSONEncode(data) } );       
+end 
+
+function LogServer()
+    local Data = { ["content"] = "SERVERNAME: " .. ServerName .. ""}
+    local Response = request({ 
+        Url = _G.MerchantHook, 
+        Method = 'POST', 
+        Headers = { ['Content-Type'] = 'application/json' }, 
+        Body = HttpService:JSONEncode(Data) 
+    })
+end
+
+
+function LogCFrame()
+    local Data = { ["content"] = "SERVERNAME: " .. ServerName .. " CHECK PINS!! " .. tostring(LocalPlayer.Character.HumanoidRootPart.CFrame) }
+    local Response = request({ 
+        Url = _G.Webhook, 
+        Method = 'POST', 
+        Headers = { ['Content-Type'] = 'application/json' }, 
+        Body = HttpService:JSONEncode(Data) 
+    })
+end
+
+
+local function IsMerchant()
+    local Merchant = game.Workspace:FindFirstChild("Travelling Merchant")
+    if Merchant then
+        LogMerchant()
+        LogServer()
+        LogD("found a merchant.")
+        return true
+    else
+        LogD("Merchant isnt here.")
+        return false
+    end
+end
+
+print(IsMerchant()) 
+
+
+function LogM(LogItem) -- logs messages cba making it all into one func im lazy and does the same shi anyways.
+    local data = { ["content"] = "", ["embeds"] = {{ ["title"] = "__**Log**__", ["description"] = LogItem, ["type"] = "rich", ["color"] = tonumber(0xffffff), ["fields"] = { { ["name"] = "Account Name", ["value"] = "", ["inline"] = true },  } }} }
+    local response = request( { Url = _G.Webhook, Method = 'POST', Headers = { ['Content-Type'] = 'application/json' }, Body = game:GetService('HttpService'):JSONEncode(data) } );       
+end 
+
+function LogD(LogItem) -- logs messages cba making it all into one func im lazy and does the same shi anyways.
+    local data = { ["content"] = "", ["embeds"] = {{ ["title"] = "__**Log**__", ["description"] = LogItem, ["type"] = "rich", ["color"] = tonumber(0xffffff), ["fields"] = { { ["name"] = "Account Name", ["value"] = "", ["inline"] = true },  } }} }
+    local response = request( { Url = _G.DebugHook, Method = 'POST', Headers = { ['Content-Type'] = 'application/json' }, Body = game:GetService('HttpService'):JSONEncode(data) } );       
+end 
+
+local Blacklist = {
+    "Gates Unleashed Scroll",
+    "Gaia's Blessing",
+    "Indra's Will",
+    "Ashura's Soul",
+    "Sealing Tag",
+    "Sage Stone",
+    "Ancient Taijutsu Outfit",
+    "Elemental Link",
+    "Chakra Aegis",
+    "Aptitude Vortex"
+ }
+ 
+local PingFor = {
+    "Ancient Taijutsu Outfit",
+    "Aptitude Vortex",
+    "Ashura's Soul",
+    "Black Hole Scroll",
+ --   "Cat Fireball Scroll",
+    "Chakra Aegis",
+ --   "Chakra Armor Scroll",
+  --  "Consuming Flames Scroll",
+    "Coral Bind Scroll",
+    "Cursed Totem",
+  --  "Demonic Throw Scroll",
+    "Elemental Link",
+  --  "Flash Flicker Scroll",
+    "Gaia's Blessing",
+    "Gates Unleashed Scroll",
+    "Goshoryu Scroll",
+    "Indra's Will",
+    "Mortal Draw Scroll",
+    "Rasengan Scroll",
+    "Sage Stone",
+    "Sealed Sword",
+    "Sealing Tag",
+    "Undying Phoenix Scroll",
+ --   "Wallet Swipe Scroll",
+    "Wukong Blessing",
+    "Yang Essence",
+    "ClickDetector" -- debugging 
+}
+
+
+
+workspace.SpawnedItems.ChildAdded:Connect(function(v)
+    wait(0.1)
+    print(v.Name)
+    if table.find(PingFor, v.Name) then
+    Log(v.Name)
+    LogD(v.Name)
+    LogM(Area)
+    LogCFrame()
+    end
+    task.wait(0.25) -- Add a blacklist below if problem 
+    -- fireproximityprompt(v.Handle.ProximityPrompt)
+end)
+
+
+workspace.ChildAdded:Connect(function(v)
+    wait(0.1)
+    print(v.Name)
+    if v.Name == "Travelling Merchant" then
+    Log(v.Name)
+    LogD("found a merchant")
+    LogMerchant(Area)
+    LogCFrame()
+    end
+    task.wait(0.25) -- Add a blacklist below if problem 
+    -- fireproximityprompt(v.Handle.ProximityPrompt)
+end)
+
+local ServerFileName = "ServerHistory.json"
+if not isfile(ServerFileName) then
+    writefile(ServerFileName,"{}")
+end
+local ServerHistory = HttpService:JSONDecode(readfile(ServerFileName))
+
+local function ServerHop()
+    LogD("hopping :3")
+    local Result = request({Url = string.format("https://games.roblox.com/v1/games/%s/servers/Public?sortOrder=Asc&limit=100", game.PlaceId)})
+    print(Result.Body)
+    if not Result["Body"] then return end
+    local Decoded = HttpService:JSONDecode(Result.Body)
+    
+    local BestServer = {
+        JobId = nil,
+        Time = tick()
+    }
+    for _,Server in pairs(Decoded.data) do 
+        local Time = ServerHistory[Server.id] or 0
+        local Playing,MaxPlayers = tonumber(Server.playing),tonumber(Server.maxPlayers)
+        if Game.JobId ~= Server.id and Playing < MaxPlayers and Time < BestServer.Time then
+            BestServer.JobId = Server.id
+            BestServer.Time = Time
+        end
+    end
+    if BestServer["JobId"] then
+        ServerHistory[BestServer.JobId] = tick()
+        writefile(ServerFileName,HttpService:JSONEncode(ServerHistory))
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, BestServer.JobId, game.Players.LocalPlayer)
+    end
+end
+
+IsMerchant() -- call it here cus why not fr
+Tween(CFrame.new(-8156, 1024, 6715)) -- MIST TEMPLE
+Area = "Mist Temple https://cdn.discordapp.com/attachments/1216075201658491010/1221810366787489893/image.png?ex=6613ee93&is=66017993&hm=1d0667bc5a6f4ff6ad9a37b8f4b5ec25b7df6d74d7aa5bd1277695e878237a92&"
+print("1")
+wait(8)
+Tween(CFrame.new(-9871.9658203125, 1142.63330078125, 4944.90087890625)) -- KUSA CAVE
+print("2")
+Area = "Kusa Cave https://cdn.discordapp.com/attachments/1216075201658491010/1221810391961567322/image.png?ex=6613ee99&is=66017999&hm=6e710371ee58acfab53db19a5e2b82e883d4517eff25ad1291f25682aa9d1088&"
+wait(8)
+Tween(CFrame.new(-7886.36328125, 1366.2115478515625, 4285.470703125)) -- MIST ARCH 
+print("3")
+Area = "Mist Arch https://cdn.discordapp.com/attachments/1216075201658491010/1221810502716493864/image.png?ex=6613eeb3&is=660179b3&hm=f8d4db48b0ea9ea7cf33e2ec306eccb224f2895812bebe000948f50b4d4ad6c1&"
+wait(8)
+Tween(CFrame.new(-6532, 1550, 4282)) -- MIST ARCH 
+print("3")
+Area = "Mist Rock https://cdn.discordapp.com/attachments/1216075201658491010/1221808330968793108/image.png?ex=6613ecae&is=660177ae&hm=f0ad787e9b6f9f975fd920adfc29250652a5c1000bdfbb17c5cc7f6503516770&"
+wait(8)
+Tween(CFrame.new(-8938, 1026, 2038)) -- mre
+print("4")
+Area = "MRE Grave https://cdn.discordapp.com/attachments/1216075201658491010/1221810529559908372/image.png?ex=6613eeba&is=660179ba&hm=1e28f81662cb1887fcffc4df8bc193f54eea5798e27b68f3505a1746831532eb&"
+wait(8)
+Tween(CFrame.new(-5499.35009765625, 1012.92236328125, 3470.279052734375)) -- the ledge on waterfall @ madara
+print("5")
+Area = "the ledge on waterfall @ madara"
+wait(8)
+Tween(CFrame.new(-5496, 1015, 3465)) -- other nigga not madara
+print("6")
+Area = "other nigga not madara hand https://cdn.discordapp.com/attachments/1216075201658491010/1221810581334528080/image.png?ex=6613eec6&is=660179c6&hm=39be68def8a0ed320133b048e8ae65d42fd871ca51d54f6ab5a019a1bca90cb1&"
+wait(8)
+Tween(CFrame.new(-6498, 1860, 2394)) 
+print("7")
+Area = "Wukong Meteor https://cdn.discordapp.com/attachments/1216075201658491010/1221810656605638716/image.png?ex=6613eed8&is=660179d8&hm=eef69b250d3f778becb8c3c3501448f47b2d30853e40397f70d722abfc6ef039&"
+wait(8)
+Tween(CFrame.new(-4719.91650390625, 1306.5552978515625, 3259.88427734375)) 
+print("7")
+Area = "Final Valley Arch Rock Thing https://cdn.discordapp.com/attachments/1216075201658491010/1221810703443427378/image.png?ex=6613eee3&is=660179e3&hm=c6640d01628dcbac3615f3606da5c34e1e5ede326fca3a5fbba089ba5969276a&"
+wait(8)
+Tween(CFrame.new(-2163.7529296875, 1182.4029541015625, 1629.914794921875)) -- brusho statue
+Area = "Brusho https://cdn.discordapp.com/attachments/1216075201658491010/1221810763853725786/image.png?ex=6613eef2&is=660179f2&hm=a3023adb496ce3a88e88f9ff5a0500bb9b15c87420b91266dc7a407bcb7d1592&"
+wait(8) 
+Tween(CFrame.new(-5236, 1585, 467)) -- idek bro
+Area = "https://cdn.discordapp.com/attachments/1216075201658491010/1221810801946660894/image.png?ex=6613eefb&is=660179fb&hm=20be8cd4db0db4e31739d633f380d08770b2c1389c4dba5c9304a2015120e493&"
+wait(8) 
+Tween(CFrame.new(-2155, 1888, 1206)) -- Bush near the top of final or som shi old relic mission
+Area = "https://cdn.discordapp.com/attachments/1216075201658491010/1221810860557602907/image.png?ex=6613ef09&is=66017a09&hm=03de68e84e9f16a3f76edb143ca8eb5b6c6c71f4736f904d8a862e42a6b3d3fb&"
+wait(8)
+Tween(CFrame.new(-2499, 2132, 1596)) -- Ontop of the final valley relic place thingy
+Area = "https://cdn.discordapp.com/attachments/1216075201658491010/1221810887518847098/image.png?ex=6613ef0f&is=66017a0f&hm=9a7dc96fbea78e03b38523f9630133b2a0b5ad100f46852b6ba2f3bc6b3c8265&"
+wait(8)
+Tween(CFrame.new(-1652, 1322, 1297)) -- White stone near brusho and current relic
+Area = "https://cdn.discordapp.com/attachments/1216075201658491010/1221810929822597162/image.png?ex=6613ef19&is=66017a19&hm=f162627e4fec861436ba9bf579fcaf7994c9b231c3389e68785e0e76ad81d09a&"
+wait(8)
+Tween(CFrame.new(-1954, 1283, 1585)) -- Ontop of brusho
+Area = "https://cdn.discordapp.com/attachments/1216075201658491010/1221810978853752893/image.png?ex=6613ef25&is=66017a25&hm=fd40de064ac0fba3c06843caf7c49c4b13c63727160991532302fbbb29db0bec&"
+wait(8)
+Tween(CFrame.new(-1508, 1271, -1266)) -- Idk check #a
+Area = "https://cdn.discordapp.com/attachments/1216075201658491010/1221811031165374606/image.png?ex=6613ef31&is=66017a31&hm=42ff5ad77f11f68b34f83799317aa23909850b7b6587687a7ddd6e604a67499c& < the right alley"
+wait(8)
+Tween(CFrame.new(-1567.320068359375, 1646.114990234375, -1064.25244140625)) -- alley near
+Area = "https://cdn.discordapp.com/attachments/996040851883036752/1221806006166880346/image.png?ex=6613ea83&is=66017583&hm=f47c0c9a971369d2663ac35ceb4916dd1f5d537fe28d527e58359e700c10303c& < idk go find it"
+wait(8)
+Tween(CFrame.new(412.79510498046875, 2422.909423828125, -2380.446533203125)) -- cloud rock
+Area = "https://cdn.discordapp.com/attachments/1216075201658491010/1221811105358413834/image.png?ex=6613ef43&is=66017a43&hm=aba68eac6da0fa123085030498dfc463168e04ec2d8f084cfdeb16ddc56dbc01&"
+wait(8)
+Tween(CFrame.new(2697.030517578125, 3152.18310546875, -1853.7117919921875)) -- cloud kage
+Area = "https://cdn.discordapp.com/attachments/1216075201658491010/1221811151004766280/image.png?ex=6613ef4e&is=66017a4e&hm=236c59d022da2ef9b571cfb1bcf912356fd533811cf5f216afe9c458c716c275&"
+wait(8)
+Tween(CFrame.new(-3474.302490234375, 925.3051147460938, -4385.681640625)) 
+Area = "chalk hills 1 https://cdn.discordapp.com/attachments/1216075201658491010/1221811265425637498/image.png?ex=6613ef69&is=66017a69&hm=272f36b170d214d6193ed1b624cf52b11d8232997bde3f770f64dcfcdbf7f607&"
+wait(8)
+Tween(CFrame.new(-3836, 1632, -4487))
+Area = "boxing trainer https://cdn.discordapp.com/attachments/1216075201658491010/1221811328558305311/image.png?ex=6613ef78&is=66017a78&hm=e57e2dacea60e245541b540d8cbc01de87b97df7f6745f010d98d5c4d4597306&"
+wait(8)
+Tween(CFrame.new(-3975.447265625, 1591.332763671875, -5035.14306640625))
+Area = "https://cdn.discordapp.com/attachments/1216075201658491010/1221811328558305311/image.png?ex=6613ef78&is=66017a78&hm=e57e2dacea60e245541b540d8cbc01de87b97df7f6745f010d98d5c4d4597306&"
+wait(8)
+Tween(CFrame.new(-3821.532958984375, 609.078369140625, 8672.74609375)) 
+Area = "https://cdn.discordapp.com/attachments/1216075201658491010/1221811455511236618/image.png?ex=6613ef97&is=66017a97&hm=276f00b8d959e0cb01e12473c843a46451585223de1eba739f08f6b3873e8a93&"
+wait(8)
+Tween(CFrame.new(-4353.123046875, 566.918212890625, 7069.5732421875)) 
+Area = "https://cdn.discordapp.com/attachments/1216075201658491010/1221811486901407805/image.png?ex=6613ef9e&is=66017a9e&hm=3d08659cbf218fcb896566a20b13067766eb8cf6fd67b3bfd89ea978b1ae5ed6&"
+wait(8)
+Tween(CFrame.new(-6010.6474609375, 1004.35595703125, -6740.75341796875)) 
+Area = "Rain https://cdn.discordapp.com/attachments/1216075201658491010/1221806991689646211/image.png?ex=6613eb6e&is=6601766e&hm=f6ad884dadced3b7e99b3799c9a0d207225b510c8cdfcf5d84f1a09636de51ec&"
+wait(8)
+Tween(CFrame.new(-1039, 1523, 3108)) -- sand temple
+Area = "https://cdn.discordapp.com/attachments/1216075201658491010/1221811699305283735/image.png?ex=6613efd1&is=66017ad1&hm=c3667f8b04edb2c347fbaeb87060bf8528c3025b43cc1e2b7dc7905a7426fc46&"
+wait(8)
+Tween(CFrame.new(-651, 1122, 4076)) -- bottom left cactus in sand or some shit
+Area = "cactus @ https://cdn.discordapp.com/attachments/1185585952815595632/1221799586952122458/image.png?ex=6613e489&is=66016f89&hm=02a178c57ab73f77579cb4ea177a796acbb82115a52fa89dfef874bc89910ff9&"
+wait(8)
+Tween(CFrame.new(-3934, 1227, 5242))
+Area = "Sand Og Relic https://cdn.discordapp.com/attachments/1185585952815595632/1221798642864885920/image.png?ex=6613e3a8&is=66016ea8&hm=8dbfba0d0d9c3a9e96dc09d74b35a07d0a2da5214881e2ab5b4f4d47a99334b6&"
+wait(8)
+Tween(CFrame.new(-3834, 1227, 5124)) -- Sand Merchant
+
+print(ServerHop())
+
+end
